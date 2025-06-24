@@ -81,6 +81,19 @@ class GeofenceForegroundService {
     );
   }
 
+  /// Adds geofence zones for monitoring
+  /// This method adds geofences zone to be monitored by the geofencing service.
+  /// Parameters:
+  ///   - zones (List<Zone>, required): The geofence zones configuration to add.
+  /// Returns: A `Future<bool>` that resolves to true if the zone was added successfully; otherwise, false.
+  Future<bool> addGeofenceZones({
+    required List<Zone> zones,
+  }) {
+    return GeofenceForegroundServicePlatform.instance.addGeofences(
+      zones: zones,
+    );
+  }
+
   /// Removes a geofence zone
   ///
   /// Parameters:

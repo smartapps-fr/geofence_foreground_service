@@ -24,6 +24,8 @@ import com.f2fk.geofence_foreground_service.utils.Utils
 import com.f2fk.geofence_foreground_service.utils.extraNameGen
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Geofence
+import com.google.android.gms.location.GeofencingRequest
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -31,6 +33,7 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import java.lang.reflect.Method
 
 @Suppress("DEPRECATION") // Deprecated for third party Services.
 fun <T> Context.isServiceRunning(service: Class<T>) =
@@ -73,7 +76,7 @@ class GeofenceForegroundServicePlugin : FlutterPlugin, MethodCallHandler, Activi
         ApiMethods.stopGeofencingService -> stopGeofencingService(result)
         ApiMethods.isForegroundServiceRunning -> result.success(context.isServiceRunning(GeofenceForegroundService::class.java))
         ApiMethods.addGeofence -> addGeofence(Zone.fromJson(argumentsMap(call.arguments)), result)
-        ApiMethods.addGeoFences -> addGeoFences(ZonesList.fromJson(argumentsMap(call.arguments)), result)
+        ApiMethods.addGeofences -> addGeofences(call, result)
         ApiMethods.removeGeofence -> removeGeofence(listOf(call.argument(Constants.zoneId)!!), result)
         else -> result.notImplemented()
     }
@@ -175,6 +178,7 @@ class GeofenceForegroundServicePlugin : FlutterPlugin, MethodCallHandler, Activi
         val request = GeofencingRequestBuilder(geofence, zone.initialTrigger).build()
         val intent = serviceIntent(GeofenceServiceAction.TRIGGER.toString())
         intent.action = System.currentTimeMillis().toString()
+
         geofencingClient.addGeofences(request, servicePendingIntent(intent))
             .addOnSuccessListener {
                 result.success(true)
@@ -187,8 +191,52 @@ class GeofenceForegroundServicePlugin : FlutterPlugin, MethodCallHandler, Activi
             }
     }
 
-    private fun addGeoFences(zones: ZonesList, result: Result) {
-        (zones.zones ?: emptyList()).forEach { addGeofence(it, result) }
+    private fun addGeofences(call: MethodCall, result: Result) {
+        // Check if the callback handle is set
+        if (!SharedPreferenceHelper.hasCallbackHandle(context)) {
+            result.error(
+                "1",
+                "You have not properly initialized the Flutter Geofence foreground service Plugin. " +
+                        "You should ensure you have called the 'startGeofencingService' function first! " +
+                        "The `callbackDispatcher` is a top level function. See example in repository.",
+                null
+            )
+            return
+        }
+
+        // Get the geofencing client && check permissions
+        val geofencingClient = LocationServices.getGeofencingClient(context)
+        if (ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        // Gather geofences data
+        val zonesData = call!!.argument<List<Map<String, Any>>>("zones")
+        val zones = zonesData!!.mapNotNull { zoneMap ->
+            try {
+                Zone.fromJson(zoneMap)
+            } catch (e: Exception) {
+                null
+            }
+        }
+
+        // Créer les geofences
+        val geofences = zones.map { zone ->
+            GeofenceBuilder(zone).build()
+        }
+
+        val geofencingRequest = GeofencingRequest.Builder()
+            .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            .addGeofences(geofences)
+            .build()
+        val intent = serviceIntent(GeofenceServiceAction.TRIGGER.toString())
+        intent.action = System.currentTimeMillis().toString()
+
+        geofencingClient.addGeofences(geofencingRequest, servicePendingIntent(intent))
     }
 
     private fun removeGeofence(geofenceRequestIds: List<String>, result: Result) {

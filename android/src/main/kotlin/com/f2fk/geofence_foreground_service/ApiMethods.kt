@@ -9,7 +9,7 @@ class ApiMethods {
         const val stopGeofencingService: String = "stopGeofencingService"
         const val isForegroundServiceRunning: String = "isForegroundServiceRunning"
         const val addGeofence: String = "addGeofence"
-        const val addGeoFences: String = "addGeoFences"
+        const val addGeofences: String = "addGeofences"
         const val removeGeofence: String = "removeGeofence"
     }
 }

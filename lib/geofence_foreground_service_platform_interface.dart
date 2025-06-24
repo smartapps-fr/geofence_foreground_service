@@ -62,6 +62,12 @@ abstract class GeofenceForegroundServicePlatform extends PlatformInterface {
     throw UnimplementedError('addGeofence() has not been implemented.');
   }
 
+  Future<bool> addGeofences({
+    required List<Zone> zones,
+  }) {
+    throw UnimplementedError('addGeofence() has not been implemented.');
+  }
+
   Future<bool> removeGeofence({
     required String zoneId,
   }) {

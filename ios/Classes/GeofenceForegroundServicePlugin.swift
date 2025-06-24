@@ -74,7 +74,7 @@ public class GeofenceForegroundServicePlugin: NSObject, FlutterPlugin {
             } catch {
                 print("Error decoding Zone: \(error)")
             }
-        case "addGeoFences":
+        case "addGeofences":
             result(false)
 //            let zonesList: ZonesList = ZonesList(fromJson: call.arguments as! [String : Any])
 

@@ -158,6 +158,29 @@ class MethodChannelGeofenceForegroundService
     return isGeofenceAdded;
   }
 
+  /// This method is used to add geofence areas
+  @override
+  Future<bool> addGeofences({
+    required List<Zone> zones,
+  }) async {
+    bool isGeofenceAdded = false;
+
+    try {
+      List<Map<String, dynamic>> zonesJson = zones.map((zone) => zone.toJson()).toList();
+
+      return await _invokeMethod<bool?>(
+          ApiMethods.addGeofences, {'zones': zonesJson}) ??
+          false;
+    } catch (e) {
+      log(
+        e.toString(),
+        name: 'addGeofences_failure',
+      );
+    }
+
+    return isGeofenceAdded;
+  }
+
   /// This method is used to remove a geofence area
   @override
   Future<bool> removeGeofence({
